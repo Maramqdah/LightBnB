@@ -7,7 +7,6 @@ const pool = new Pool({
 	password: "123",
 	host: "localhost",
 	database: "lightbnb2",
-	//port: 3030,
 });
 
 /// Users
@@ -18,16 +17,26 @@ const pool = new Pool({
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithEmail = function(email) {
-  let user;
-  for (const userId in users) {
-    user = users[userId];
-    if (user.email.toLowerCase() === email.toLowerCase()) {
-      break;
-    } else {
-      user = null;
-    }
-  }
-  return Promise.resolve(user);
+  return pool
+    .query(`SELECT users.email FROM users WHERE email = $1`, [email])
+    .then((result) => {
+      return result.rows;
+    })
+    .catch((err) => {
+      console.log(err.message);
+      return null;
+    })
+    .finally(() => pool.end());
+  // let user;
+  // for (const userId in users) {
+  //   user = users[userId];
+  //   if (user.email.toLowerCase() === email.toLowerCase()) {
+  //     break;
+  //   } else {
+  //     user = null;
+  //   }
+  // }
+  // return Promise.resolve(user);
 }
 exports.getUserWithEmail = getUserWithEmail;
 
@@ -37,7 +46,16 @@ exports.getUserWithEmail = getUserWithEmail;
  * @return {Promise<{}>} A promise to the user.
  */
 const getUserWithId = function(id) {
-  return Promise.resolve(users[id]);
+  return pool
+  .query(`SELECT users.id FROM users WHERE id = $1`, [id])
+  .then((result) => result.id)
+  .catch((err) => {
+    console.log(err.message);
+    return null;
+  })
+  .finally(() => pool.end());
+
+  //return Promise.resolve(users[id]);
 }
 exports.getUserWithId = getUserWithId;
 
@@ -48,10 +66,26 @@ exports.getUserWithId = getUserWithId;
  * @return {Promise<{}>} A promise to the user.
  */
 const addUser =  function(user) {
-  const userId = Object.keys(users).length + 1;
-  user.id = userId;
-  users[userId] = user;
-  return Promise.resolve(user);
+  return pool
+  .query(`INSERT INTO users (name, email, password) VALUES ($1, $2,$3) `, [
+    user.name,
+    user.email,
+    user.password,
+  ])
+  .then((result) => {
+    console.log(result.rows);
+    return result.rows;
+  })
+  .catch((err) => {
+    console.log(err.message);
+    return null;
+  })
+  .finally(() => pool.end());
+
+  // const userId = Object.keys(users).length + 1;
+  // user.id = userId;
+  // users[userId] = user;
+  // return Promise.resolve(user);
 }
 exports.addUser = addUser;
 
@@ -63,7 +97,20 @@ exports.addUser = addUser;
  * @return {Promise<[{}]>} A promise to the reservations.
  */
 const getAllReservations = function(guest_id, limit = 10) {
-  return getAllProperties(null, 2);
+  return pool
+  .query(
+    `SELECT count(guest_id) as all_user_reservation  FROM reservations WHERE guest_id = $1 limit $2`,
+    [guest_id, limit]
+  )
+  .then((result) => {
+    console.log(result.rows);
+    return result.rows;
+  })
+  .catch((err) => {
+    console.log(err.message);
+  });
+
+  //return getAllProperties(null, 2);
 }
 exports.getAllReservations = getAllReservations;
 
